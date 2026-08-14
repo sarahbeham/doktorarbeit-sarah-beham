@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -12,13 +13,12 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /> <!-- Notification permission for Android 13 -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
     <uses-feature android:name="android.hardware.camera.any" />
-
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
@@ -40,7 +40,9 @@
         <service
             android:name=".services.upload.UploadService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true"
+            android:foregroundServiceType="dataSync"
+            />
 
         <activity
             android:name=".MainActivity"
@@ -52,16 +54,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".DevToolsActivity"
-            android:label="@string/title_activity_dev_tools"
-            android:parentActivityName=".MainActivity" />
-        <activity
-            android:name=".registration.RegisterActivity"
-            android:parentActivityName=".MainActivity" />
-        <activity
-            android:name=".debug.DebugActivity"
-            android:parentActivityName=".MainActivity" />
+        <activity android:name=".ViewScreenshotsActivity" />
+
         <activity
             android:name=".services.capture.CaptureActivity"
             android:parentActivityName=".MainActivity"
@@ -69,15 +63,6 @@
         <activity
             android:name=".StopCaptureActivity"
             android:parentActivityName=".MainActivity" />
-        <activity
-            android:name=".PauseCaptureActivity"
-            android:parentActivityName=".MainActivity" />
-
-        <receiver
-            android:name=".services.capture.ResumeReceiver"
-            android:enabled="true"
-            android:exported="true"
-            android:process=":remote" />
         <receiver
             android:name=".services.upload.UploadScheduler"
             android:exported="true">
@@ -95,5 +80,4 @@
             </intent-filter>
         </receiver>
     </application>
-
 </manifest>

@@ -1,0 +1,14 @@
+# Copy this file to local.properties and fill in the study-specific values.
+# local.properties is git-ignored and must never be committed.
+#
+# Alternatively, export these as environment variables:
+#   SLC_UPLOAD_ADDRESS, SLC_PARTICIPANT_KEY, SLC_PARTICIPANT_HASH
+
+# Cloud Function endpoint that receives the encrypted screenshots.
+uploadAddress=https://<region>-<project>.cloudfunctions.net/upload
+
+# Per-participant encryption key and hash (64 hex characters each).
+# One build per participant. If these are empty the app starts unregistered
+# and will not capture — QR-code registration was removed in this fork.
+participantKey=
+participantHash=

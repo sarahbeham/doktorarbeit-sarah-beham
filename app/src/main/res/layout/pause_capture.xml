@@ -6,8 +6,7 @@
     android:layout_margin="10dp"
     android:background="@color/white_isabelline"
     android:orientation="vertical"
-    android:padding="@dimen/box_inset_layout_padding"
-    tools:context=".DevToolsActivity">
+    android:padding="@dimen/box_inset_layout_padding">
 
     <TextView
         android:id="@+id/textView"

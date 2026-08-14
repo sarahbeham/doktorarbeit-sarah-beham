@@ -1,5 +1,104 @@
 # ScreenLife Capture Android App
 
+> [!NOTE]
+> ## About this fork
+>
+> This is a fork of [ScreenLife-Capture-Team/app](https://github.com/ScreenLife-Capture-Team/app),
+> adapted for the doctoral dissertation of Sarah Beham.
+>
+> **Dissertation title:**
+> *Social Media: Zwischen Aufmerksamkeit und Wert: Welche Videokurzformate junge Erwachsene auf Instagram nutzen – und was daraus für den Journalismus folgt*
+>
+> We modified ScreenLife Capture so that it only captures screenshots from Instagram. All credit for the original application goes to the
+> ScreenLife Capture Team; the underlying method is described in
+> [Chua et al., *Behavior Research Methods* (2023)](https://link.springer.com/article/10.3758/s13428-022-02006-z).
+>
+> Changes in this fork:
+> - Renamed the application package to match the study
+> - Restricted screenshot capture to Instagram only
+> - Added a screenshot review screen so participants can see and delete captured images
+> - Replaced QR-code registration with a per-participant build-time configuration
+> - Reworked notifications and various capture/upload fixes
+>
+> ### Building
+>
+> Study-specific values are **not** committed. Copy `local.properties.example` to
+> `local.properties` and fill in the upload endpoint and the participant key/hash,
+> then build one APK per participant:
+>
+> ```
+> cp local.properties.example local.properties
+> $EDITOR local.properties
+> ./gradlew assembleRelease
+> ```
+>
+> `participantKey` and `participantHash` must each be 64-character hex values.
+> The participant configuration is compiled into the APK via `BuildConfig`, so you must
+> rebuild and reinstall the app whenever you change these values.
+>
+> The same values can be supplied as the environment variables `SLC_UPLOAD_ADDRESS`,
+> `SLC_PARTICIPANT_KEY` and `SLC_PARTICIPANT_HASH`.
+
+## End-to-end setup
+
+This fork only covers the Android app. A full study setup also needs:
+
+- a backend upload endpoint
+- participant-specific keys
+- a built APK for each participant
+- a researcher-side tool to retrieve and manage uploaded screenshots
+
+The original ScreenLife Capture ecosystem used these companion repositories:
+
+- [cloud-functions](https://github.com/ScreenLife-Capture-Team/cloud-functions): Google Cloud Functions backend for receiving uploads
+- [DMPO](https://github.com/ScreenLife-Capture-Team/DMPO): researcher-side tool for onboarding, downloading, and managing screenshots
+- [researcher guide](https://andrewzhyee.com/screenlife/): original setup guide for non-programming deployment
+
+If someone opens this repository, the required workflow is:
+
+1. Set up the backend upload endpoint.
+2. Generate a participant key and matching participant hash.
+3. Build one APK per participant with those values compiled in.
+4. Install the APK on the participant's Android device.
+5. Let the participant grant permissions and start capture.
+6. Receive uploaded screenshots in the backend.
+7. Use DMPO to download and manage the uploaded files.
+
+## System overview
+
+- This repository: Android app used by participants to capture and upload screenshots.
+- Cloud Functions: receives uploads from the app and stores them in the study backend.
+- DMPO: researcher-side desktop tool for participant onboarding, data download, and management.
+
+## How screenshot transfer works
+
+At a high level, the app does the following:
+
+1. Captures a screenshot on the device.
+2. Stores a timestamped file locally.
+3. Creates an encrypted copy for upload.
+4. Uploads batches of screenshots to the configured `uploadAddress`.
+
+In the current app code, uploads are sent by `UploadService` as `multipart/form-data` HTTP POST requests to `UPLOAD_ADDRESS`.
+The original `cloud-functions` repository documents an upload function that receives these files on the backend.
+
+## Google Cloud setup
+
+This repository does not contain the Google Cloud deployment itself. For backend setup, consult:
+
+- [cloud-functions](https://github.com/ScreenLife-Capture-Team/cloud-functions) for the original Google Cloud Functions code
+- [researcher guide](https://andrewzhyee.com/screenlife/) for the original end-to-end setup documentation
+
+At minimum, you need a deployed upload endpoint URL and must place that URL into `uploadAddress` in `local.properties`.
+
+The original `cloud-functions` repository documents these backend functions:
+
+- `register`
+- `upload_file`
+- `count_files`
+
+For this fork, the practically relevant one is the upload endpoint used by the app.
+
 > [!IMPORTANT]
 > ## ⚠️ REPOSITORY DEPRECATED ⚠️
 > 
@@ -37,6 +136,98 @@ Summary of steps:
 - In Android Studio, select your device from the device list on the top toolbar. Click "Run app". The app should be installed in your device.
 
 ### Packaging APK for distribution
+
+For each participant, repeat this process:
+
+1. Generate a participant key and matching hash.
+2. Put both values into `local.properties`.
+3. Build the APK.
+4. Install that APK on the participant's device.
+5. If you change participant values, rebuild and reinstall.
+
+### Starting the app for one participant
+
+This fork no longer uses QR-code registration. Instead, each participant gets their own
+build with a fixed participant key and participant hash.
+
+1. Copy `local.properties.example` to `local.properties`.
+2. Set `uploadAddress`.
+3. Set `participantKey` to the participant's 64-character hex key.
+4. Set `participantHash` to the participant's 64-character hex hash.
+5. Build the app.
+6. Reinstall the app on the device.
+7. Open the app and start capture.
+
+Example:
+
+```properties
+uploadAddress=https://example.invalid/upload
+participantKey=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+participantHash=abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+```
+
+On macOS, you can generate a random participant key and derive the matching hash like this:
+
+```sh
+key=$(openssl rand -hex 32)
+hash=$(printf '%s' "$key" | xxd -r -p | shasum -a 256 | awk '{print $1}')
+printf 'participantKey=%s\nparticipantHash=%s\n' "$key" "$hash"
+```
+
+`participantKey` is a random 32-byte value encoded as 64 hex characters.
+`participantHash` is the SHA-256 hash of that key, also encoded as 64 hex characters.
+
+If `participantKey` or `participantHash` is missing, the app will start but will not store
+screenshots for capture.
+
+For a debug build in Android Studio or from the terminal:
+
+```sh
+sh gradlew :app:assembleDebug
+```
+
+For a release APK:
+
+```sh
+sh gradlew :app:assembleRelease
+```
+
+## DMPO setup and data retrieval
+
+To download and manage uploaded screenshots, use the original DMPO repository:
+
+- [DMPO](https://github.com/ScreenLife-Capture-Team/DMPO)
+
+According to the DMPO README, the basic startup steps are:
+
+```sh
+npm install
+npm start
+```
+
+or:
+
+```sh
+electron .
+```
+
+The DMPO README also notes that `bucket_key.json` and `settings.json` must be present and configured.
+If you want automated censoring in DMPO, the `censoring-scripts` repository must be placed next to the `DMPO` folder as described in the DMPO README.
+
+## Researcher checklist
+
+Use this order if you want a single checklist for the whole workflow:
+
+1. Prepare or deploy the Google Cloud backend.
+2. Note the upload endpoint URL.
+3. Generate a participant key.
+4. Derive the matching participant hash.
+5. Add `uploadAddress`, `participantKey`, and `participantHash` to `local.properties`.
+6. Build the participant APK.
+7. Install and test the APK on the participant device.
+8. Distribute the correct APK to the participant.
+9. Run DMPO on the researcher side.
+10. Download and manage uploaded screenshots.
 
 
 
